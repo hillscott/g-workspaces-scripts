@@ -78,10 +78,10 @@ def main():
     if not items:
         print('No files found.')
     else:
+        print('Files / Folders with Augmented Permissions:')
         for item in items:
             if item['hasAugmentedPermissions']:
                 foundAugmentedFile=True
-                print('Files / Folders with Augmented Permissions:')
                 #print(u'{0} ({1} - {2})'.format(item['name'], item['id'], item['hasAugmentedPermissions']))
                 print(u'{0}'.format(item['name']))
         if foundAugmentedFile == False:
