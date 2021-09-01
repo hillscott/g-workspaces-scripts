@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os.path
 import sys
+#import pprint
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -13,6 +14,7 @@ from google.oauth2.credentials import Credentials
 # https://developers.google.com/drive/api/v2/reference/files
 # https://developers.google.com/drive/api/v2/shared-drives-diffs
 # https://developers.google.com/drive/api/v2/ref-search-terms
+# https://developers.google.com/drive/api/v3/fields-parameter
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
@@ -30,6 +32,11 @@ def main():
     else:
         print("ERROR: No --driveID passed! Find the shared drive ID!")
         quit()
+    if("--folders-only" in sys.argv):
+        print("ONLY Folders will be examined!")
+        foldersOnly = True
+    else:
+        foldersOnly=False
     creds = None
     foundAugmentedFile=False
     # The file token.json stores the user's access and refresh tokens, and is
@@ -49,29 +56,37 @@ def main():
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
 
+    # Call the Drive v3 API
     service = build('drive', 'v3', credentials=creds)
 
-    # Call the Drive v3 API
+    if(foldersOnly):
+        queryOptions = 'mimeType=\'application/vnd.google-apps.folder\''
+    else:
+        queryOptions = ''
     results = service.files().list(
-#        q="mimeType='application/vnd.google-apps.folder'",
+        q=queryOptions,
         pageSize=1000, 
         corpora='drive', 
         includeItemsFromAllDrives=True, 
         supportsAllDrives=True, 
         driveId=driveID, 
-        fields="nextPageToken, files(id, name, hasAugmentedPermissions)").execute()
+        fields="nextPageToken, files(id, name, hasAugmentedPermissions, permissions/*)").execute()
+# Enable the below to see ALL file properties    
+#        fields="*").execute()
     token = results.get('nextPageToken', None)
     items = results.get('files', [])
     while token is not None:
         results = service.files().list(
-#                q="mimeType='application/vnd.google-apps.folder'",
+                q=queryOptions,
                 pageSize=1000,
                 corpora='drive', 
                 includeItemsFromAllDrives=True, 
                 supportsAllDrives=True, 
                 pageToken=token,
                 driveId=driveID, 
-                fields="nextPageToken, files(id, name, hasAugmentedPermissions)").execute()
+                fields="nextPageToken, files(id, name, hasAugmentedPermissions, permissions/*)").execute()
+# Enable the below to see ALL file properties        
+#                fields="*").execute()
         token = results.get('nextPageToken', None)
         items.extend(results.get('files', []))
 
@@ -82,8 +97,26 @@ def main():
         for item in items:
             if item['hasAugmentedPermissions']:
                 foundAugmentedFile=True
-                #print(u'{0} ({1} - {2})'.format(item['name'], item['id'], item['hasAugmentedPermissions']))
                 print(u'{0}'.format(item['name']))
+#                pprint.pp(item)
+                # Get a permission listing for the item
+                permissions = service.permissions().list(fileId=item['id'], supportsAllDrives=True,fields="*").execute()
+                print("Permissions granted...")
+#                pprint.pp(permissions)
+                foundItem = False
+                for perm in permissions['permissions']:
+#                    pprint.pp(perm)
+                    if not perm['permissionDetails'][0]['inherited']:
+                        foundItem = True
+                        print("  Role: " + perm['role'])
+                        try:
+                            print("  User-Email: " + perm['emailAddress'])
+                        except KeyError:
+                            print("  WARNING!! NO EMAIL FOUND! LIKELY A LINK SHARING SCENARIO WARNING!!!")
+#                        pprint.pp(perm['permissionDetails'][0]['inherited'])
+                        print("  Permission Inherited: " + str(perm['permissionDetails'][0]['inherited']) + "\n")
+                if not foundItem:
+                    print("  Unknown permissions")
         if foundAugmentedFile == False:
             print('No files with Augmented Permissions found')
 if __name__ == '__main__':
