@@ -1,6 +1,6 @@
 from __future__ import print_function
+import argparse
 import os.path
-import sys
 #import pprint
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -23,20 +23,27 @@ SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 # url bar.
 driveID="none"
 
-def main():
+
+def parse_args():
+    """Parse command line arguments and return a namespace object."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--driveID',
+        required=True,
+        help='ID of the shared drive to search',
+    )
+    parser.add_argument(
+        '--folders-only',
+        action='store_true',
+        help='only examine folders (not individual files)',
+    )
+    return parser.parse_args()
+
+
+def main(driveID, foldersOnly):
     """Shows basic usage of the Drive v3 API.
     Prints the names and ids of the first 10 files the user has access to.
     """
-    if("--driveID" in sys.argv):
-        driveID = sys.argv[sys.argv.index("--driveID") + 1]
-    else:
-        print("ERROR: No --driveID passed! Find the shared drive ID!")
-        quit()
-    if("--folders-only" in sys.argv):
-        print("ONLY Folders will be examined!")
-        foldersOnly = True
-    else:
-        foldersOnly=False
     creds = None
     foundAugmentedFile=False
     # The file token.json stores the user's access and refresh tokens, and is
@@ -65,13 +72,13 @@ def main():
         queryOptions = ''
     results = service.files().list(
         q=queryOptions,
-        pageSize=1000, 
-        corpora='drive', 
-        includeItemsFromAllDrives=True, 
-        supportsAllDrives=True, 
-        driveId=driveID, 
+        pageSize=1000,
+        corpora='drive',
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
+        driveId=driveID,
         fields="nextPageToken, files(id, name, hasAugmentedPermissions, permissions/*)").execute()
-# Enable the below to see ALL file properties    
+# Enable the below to see ALL file properties
 #        fields="*").execute()
     token = results.get('nextPageToken', None)
     items = results.get('files', [])
@@ -79,13 +86,13 @@ def main():
         results = service.files().list(
                 q=queryOptions,
                 pageSize=1000,
-                corpora='drive', 
-                includeItemsFromAllDrives=True, 
-                supportsAllDrives=True, 
+                corpora='drive',
+                includeItemsFromAllDrives=True,
+                supportsAllDrives=True,
                 pageToken=token,
-                driveId=driveID, 
+                driveId=driveID,
                 fields="nextPageToken, files(id, name, hasAugmentedPermissions, permissions/*)").execute()
-# Enable the below to see ALL file properties        
+# Enable the below to see ALL file properties
 #                fields="*").execute()
         token = results.get('nextPageToken', None)
         items.extend(results.get('files', []))
@@ -119,5 +126,10 @@ def main():
                     print("  Unknown permissions")
         if foundAugmentedFile == False:
             print('No files with Augmented Permissions found')
+
+
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    if args.folders_only:
+        print("ONLY Folders will be examined!")
+    main(args.driveID, args.folders_only)
