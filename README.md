@@ -8,9 +8,8 @@ $ cd
 $ virtualenv gdrive-search
 $ cd gdrive-search
 $ source bin/activate
-$ pip install google-api-python-client argparse
+$ pip install google-api-python-client
 ```
-Optional: pip install pprint
 
 Follow the links at: https://developers.google.com/drive/api/v3/quickstart/python to setup a google cloud platform project with the API enabled (Drive API) AND how to "Create credentials" to put credentials.json and token.json in-place
 
