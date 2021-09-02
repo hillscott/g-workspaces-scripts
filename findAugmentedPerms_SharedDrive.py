@@ -100,11 +100,12 @@ def main(driveID, foldersOnly):
     if not items:
         print('No files found.')
     else:
-        print('Files / Folders with Augmented Permissions:')
+        print('Files / Folders with Augmented Permissions:\n')
         for item in items:
             if item['hasAugmentedPermissions']:
                 foundAugmentedFile=True
                 print(u'{0}'.format(item['name']))
+                print('----')
 #                pprint.pp(item)
                 # Get a permission listing for the item
                 permissions = service.permissions().list(fileId=item['id'], supportsAllDrives=True,fields="*").execute()
@@ -122,6 +123,14 @@ def main(driveID, foldersOnly):
                             print("  WARNING!! NO EMAIL FOUND! LIKELY A LINK SHARING SCENARIO WARNING!!!")
 #                        pprint.pp(perm['permissionDetails'][0]['inherited'])
                         print("  Permission Inherited: " + str(perm['permissionDetails'][0]['inherited']) + "\n")
+                    try:    
+                        if not perm['permissionDetails'][1]['inherited']:
+                            foundItem = True
+                            print("  Shared Drive overide and file permissions found...")
+                            print("  If this is the only permission entry, this file is likely safe to ignore\n")
+#                            pprint.pp(perm)
+                    except IndexError:
+                        ignoreMe = 1
                 if not foundItem:
                     print("  Unknown permissions")
         if foundAugmentedFile == False:
@@ -131,5 +140,5 @@ def main(driveID, foldersOnly):
 if __name__ == '__main__':
     args = parse_args()
     if args.folders_only:
-        print("ONLY Folders will be examined!")
+        print("NOTICE: ONLY Folders will be examined!\n")
     main(args.driveID, args.folders_only)
