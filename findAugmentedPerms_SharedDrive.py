@@ -65,13 +65,13 @@ def main():
         queryOptions = ''
     results = service.files().list(
         q=queryOptions,
-        pageSize=1000, 
-        corpora='drive', 
-        includeItemsFromAllDrives=True, 
-        supportsAllDrives=True, 
-        driveId=driveID, 
+        pageSize=1000,
+        corpora='drive',
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
+        driveId=driveID,
         fields="nextPageToken, files(id, name, hasAugmentedPermissions, permissions/*)").execute()
-# Enable the below to see ALL file properties    
+# Enable the below to see ALL file properties
 #        fields="*").execute()
     token = results.get('nextPageToken', None)
     items = results.get('files', [])
@@ -79,13 +79,13 @@ def main():
         results = service.files().list(
                 q=queryOptions,
                 pageSize=1000,
-                corpora='drive', 
-                includeItemsFromAllDrives=True, 
-                supportsAllDrives=True, 
+                corpora='drive',
+                includeItemsFromAllDrives=True,
+                supportsAllDrives=True,
                 pageToken=token,
-                driveId=driveID, 
+                driveId=driveID,
                 fields="nextPageToken, files(id, name, hasAugmentedPermissions, permissions/*)").execute()
-# Enable the below to see ALL file properties        
+# Enable the below to see ALL file properties
 #                fields="*").execute()
         token = results.get('nextPageToken', None)
         items.extend(results.get('files', []))
