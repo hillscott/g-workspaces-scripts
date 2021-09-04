@@ -126,7 +126,7 @@ def main(driveID, foldersOnly):
                     try:    
                         if not perm['permissionDetails'][1]['inherited']:
                             foundItem = True
-                            print("  Shared Drive overide and file permissions found...")
+                            print("  Shared Drive override and file permissions found...")
                             print("  If this is the only permission entry, this file is likely safe to ignore\n")
 #                            pprint.pp(perm)
                     except IndexError:
